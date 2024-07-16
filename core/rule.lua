@@ -5,9 +5,26 @@ local ipairs = ipairs
 local open = io.open
 local awful = require("awful")
 local ruled = require("ruled")
+local gtimer = require("gears.timer")
 
 
 local M = {}
+
+function M.delayed_callback(callback, timeout)
+    if type(callback) ~= "function" then
+        return nil
+    end
+    return function(client)
+        gtimer {
+            timeout = tonumber(timeout) or 0.1,
+            autostart = true,
+            single_shot = true,
+            callback = function()
+                callback(client)
+            end,
+        }
+    end
+end
 
 do
     local blacklisted_snids = setmetatable({}, { __mode = "v" })
@@ -73,15 +90,5 @@ do
         end
     end, { "awful.spawn", "awful.rules" }, {})
 end
-
-ruled.client.add_rule_source("fix_new_tag", function(client, properties)
-    local new_tag = properties.new_tag
-    if type(new_tag) ~= "table" then
-        return
-    end
-    if not new_tag.screen then
-        new_tag.screen = client.screen or capi.screen.primary
-    end
-end, {}, { "awful.spawn", "awful.rules" })
 
 return M
